@@ -1,6 +1,8 @@
 import streamlit as st
 import cv2
 import time
+import numpy as np
+import pandas as pd
 from collections import deque
 
 st.set_page_config(
@@ -15,84 +17,60 @@ st.set_page_config(
 # -----------------------------
 st.markdown("""
 <style>
-    .stApp {
-        background: #0b0d10;
-        color: #f4f4f5;
-    }
-
-    [data-testid="stSidebar"] {
-        background: #111419;
-        border-right: 1px solid #252a31;
-    }
-
-    .hero {
-        padding: 10px 0 18px 0;
-    }
-
-    .hero-title {
-        font-size: 42px;
-        font-weight: 800;
-        letter-spacing: -1.5px;
-        margin: 0;
-    }
-
-    .hero-subtitle {
-        color: #9ca3af;
-        font-size: 15px;
-        margin-top: 5px;
-    }
-
-    .metric-card {
-        background: #14181e;
-        border: 1px solid #272d35;
-        border-radius: 16px;
-        padding: 18px;
-        min-height: 120px;
-    }
-
-    .metric-label {
-        color: #9ca3af;
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 0.7px;
-    }
-
-    .metric-value {
-        font-size: 30px;
-        font-weight: 750;
-        margin-top: 8px;
-    }
-
-    .status {
-        display: inline-block;
-        padding: 7px 13px;
-        border-radius: 999px;
-        font-weight: 700;
-        font-size: 14px;
-        background: #17231b;
-        color: #72e59a;
-        border: 1px solid #274d35;
-    }
-
-    .section-title {
-        font-size: 20px;
-        font-weight: 750;
-        margin: 24px 0 10px 0;
-    }
-
-    .tip {
-        background: #14181e;
-        border: 1px solid #272d35;
-        border-radius: 14px;
-        padding: 14px;
-        color: #c7cbd1;
-        font-size: 14px;
-    }
-
-    div[data-testid="stImage"] img {
-        border-radius: 16px;
-        border: 1px solid #272d35;
-    }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+html,body,[class*="css"]{font-family:Inter,sans-serif}
+.stApp{
+ background:
+ radial-gradient(circle at 8% 8%,rgba(124,92,255,.18),transparent 28%),
+ radial-gradient(circle at 92% 12%,rgba(0,220,255,.10),transparent 25%),
+ linear-gradient(135deg,#060811,#0c101a 52%,#070910);
+ color:#f6f7fb;
+}
+.block-container{max-width:1450px;padding-top:1.4rem}
+[data-testid="stSidebar"]{
+ background:linear-gradient(180deg,#10131d,#080a10);
+ border-right:1px solid rgba(255,255,255,.08);
+}
+.hero{
+ padding:30px 32px;margin-bottom:22px;border-radius:28px;
+ border:1px solid rgba(255,255,255,.10);
+ background:linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,.025));
+ box-shadow:0 28px 70px rgba(0,0,0,.42),inset 0 1px rgba(255,255,255,.08);
+ backdrop-filter:blur(20px);
+}
+.kicker{font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#aaa2ff}
+.hero-title{font-size:clamp(36px,5vw,58px);font-weight:800;letter-spacing:-3px;margin:7px 0}
+.hero-title span{background:linear-gradient(90deg,#fff,#bcb6ff,#72e7ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-subtitle{color:#9ca3b2;font-size:15px}
+.metric-card{
+ min-height:125px;padding:19px;border-radius:22px;
+ border:1px solid rgba(255,255,255,.09);
+ background:linear-gradient(145deg,rgba(255,255,255,.085),rgba(255,255,255,.025));
+ box-shadow:0 18px 42px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.07);
+ backdrop-filter:blur(18px);
+}
+.metric-label{font-size:10px;font-weight:800;letter-spacing:1.3px;color:#858c9b}
+.metric-value{font-size:30px;font-weight:800;margin-top:12px}
+.status{
+ display:inline-flex;align-items:center;padding:8px 13px;border-radius:999px;
+ background:rgba(64,220,150,.10);border:1px solid rgba(64,220,150,.25);
+ color:#71efb5;font-size:12px;font-weight:800
+}
+.status:before{content:"";width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 13px #4ade80;margin-right:8px}
+.tip{
+ padding:17px;border-radius:18px;border:1px solid rgba(255,255,255,.08);
+ background:rgba(255,255,255,.035);color:#aeb4c0;font-size:13px;line-height:1.65
+}
+.section-title{font-size:18px;font-weight:800;margin:8px 0 11px}
+.section-caption{font-size:12px;color:#858c9b;margin-bottom:12px}
+.stButton>button{
+ border-radius:14px!important;border:1px solid rgba(255,255,255,.10)!important;
+ background:linear-gradient(145deg,rgba(255,255,255,.11),rgba(255,255,255,.035))!important;
+ color:#fff!important;font-weight:700!important;box-shadow:0 10px 25px rgba(0,0,0,.22)
+}
+[data-testid="stImage"] img{border-radius:20px;border:1px solid rgba(255,255,255,.10);box-shadow:0 22px 55px rgba(0,0,0,.38)}
+.footer{margin-top:40px;padding:24px;text-align:center;border-top:1px solid rgba(255,255,255,.08);color:#72798a;font-size:12px}
+.footer .name{color:#d9d6ff;font-weight:800}.footer a{color:#aaa2ff!important;text-decoration:none;font-weight:700;margin:0 8px}
 </style>
 """, unsafe_allow_html=True)
 
@@ -338,14 +316,37 @@ if not st.session_state.running:
     )
 
 else:
+    # Streamlit Cloud cannot access your laptop webcam through cv2.VideoCapture.
+    # Browser camera works through the user's device instead.
+    st.info("☁️ Deployed on Streamlit Cloud? Use the browser camera below. Local runs can use the OpenCV webcam.")
+    browser_photo = st.camera_input("Browser camera", label_visibility="collapsed")
+
+    if browser_photo is not None:
+        frame = cv2.imdecode(
+            np.frombuffer(browser_photo.getvalue(), dtype=np.uint8),
+            cv2.IMREAD_COLOR
+        )
+        if frame is not None:
+            active, processed_frame, _ = detect_activity(frame, None, int(sensitivity))
+            status = "STUDYING" if active else "INACTIVE"
+            cv2.putText(
+                processed_frame, status, (20, 45),
+                cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,255), 2, cv2.LINE_AA
+            )
+            st.image(
+                cv2.cvtColor(processed_frame, cv2.COLOR_BGR2RGB),
+                channels="RGB",
+                use_container_width=True
+            )
+
     # -----------------------------
-    # Camera loop
+    # Local OpenCV camera loop
     # -----------------------------
     cap = cv2.VideoCapture(int(camera_index))
 
     if not cap.isOpened():
         st.error(
-            "Could not open the webcam. Check camera permissions or try camera index 1."
+            "Could not open the local webcam. If this app is on Streamlit Cloud, use the browser camera option below."
         )
         st.session_state.running = False
         st.stop()
@@ -471,3 +472,24 @@ else:
 
     finally:
         cap.release()
+
+# -----------------------------
+# Footer
+# -----------------------------
+YOUR_NAME = "Azahar Patel"
+GITHUB_URL = "https://github.com/yourusername"
+LINKEDIN_URL = "https://www.linkedin.com/in/yourusername"
+
+st.markdown(
+    f"""
+    <div class="footer">
+        Built & crafted by <span class="name">{YOUR_NAME}</span>
+        <br><br>
+        <a href="{GITHUB_URL}" target="_blank">GitHub</a>
+        <a href="{LINKEDIN_URL}" target="_blank">LinkedIn</a>
+        <br><br>
+        Study Vision · OpenCV V1
+    </div>
+    """,
+    unsafe_allow_html=True
+)
